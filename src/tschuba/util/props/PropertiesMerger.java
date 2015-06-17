@@ -7,7 +7,6 @@ package tschuba.util.props;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Stack;
 import tschuba.util.collection.DoubleLink;
 
@@ -17,7 +16,7 @@ import tschuba.util.collection.DoubleLink;
  */
 public class PropertiesMerger {
 
-    private Map<String, DoubleLink<PropertiesSection>> sectionMap = new LinkedHashMap<>();
+    private final Map<String, DoubleLink<PropertiesSection>> sectionMap = new LinkedHashMap<>();
     private DoubleLink<PropertiesSection> lastLink;
     private DoubleLink<PropertiesSection> lastBuffereredLink;
 
@@ -47,7 +46,7 @@ public class PropertiesMerger {
     private void addFirstFile(PropertiesReader reader) {
         while (reader.hasNext()) {
             PropertiesSection section = reader.next();
-            this.addSectionToEnd(section);
+            this.addToEnd(section);
         }
     }
 
@@ -66,25 +65,28 @@ public class PropertiesMerger {
                 if (linkForKey != null) {
                     linkForKey.setValue(section);
 
+                    // clear buffer
                     if (lastBuffereredLink != null) {
                         if (anchor == null) {
                             linkForKey.setPredecessor(lastBuffereredLink);
                         } else {
                             anchor.setSuccessor(lastBuffereredLink);
                         }
+                        this.lastBuffereredLink = null;
                     }
 
                     anchor = linkForKey;
 
                 } else {
-                    this.addSectionToEnd(section);
+                    linkForKey = this.addToEnd(section);
+                    this.sectionMap.put(key, linkForKey);
 
                 }
+
             } else {
+                this.buffer(section);
 
             }
-
-            // TODO: merge
         }
     }
 
@@ -93,13 +95,21 @@ public class PropertiesMerger {
      * @param section
      * @return
      */
-    private DoubleLink<PropertiesSection> addSectionToEnd(PropertiesSection section) {
+    private DoubleLink<PropertiesSection> addToEnd(PropertiesSection section) {
         DoubleLink<PropertiesSection> link = new DoubleLink<>(section);
-        if (lastLink != null) {
-            lastLink.setSuccessor(link);
-        }
-        lastLink = link;
+        this.addToEnd(link);
         return link;
+    }
+
+    /**
+     *
+     * @param section
+     */
+    private void addToEnd(DoubleLink<PropertiesSection> section) {
+        if (lastLink != null) {
+            lastLink.setSuccessor(section);
+        }
+        lastLink = section;
     }
 
     /**
