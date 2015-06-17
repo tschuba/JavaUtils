@@ -12,14 +12,25 @@ public class DoubleLink<T> implements BackLink<DoubleLink<T>>, ForthLink<DoubleL
     private DoubleLink<T> successor;
     private T value;
 
+    /**
+     *
+     */
     public DoubleLink() {
         super();
     }
 
+    /**
+     *
+     * @param value
+     */
     public DoubleLink(T value) {
         this.value = value;
     }
 
+    /**
+     *
+     * @return
+     */
     public int getIndex() {
         return index;
     }
@@ -29,6 +40,10 @@ public class DoubleLink<T> implements BackLink<DoubleLink<T>>, ForthLink<DoubleL
         return predecessor;
     }
 
+    /**
+     *
+     * @param predecessor
+     */
     public void setPredecessor(DoubleLink<T> predecessor) {
         if (this.predecessor != null && predecessor == null) {
             this.predecessor.setSuccessor(null);
@@ -45,6 +60,10 @@ public class DoubleLink<T> implements BackLink<DoubleLink<T>>, ForthLink<DoubleL
         return successor;
     }
 
+    /**
+     *
+     * @param successor
+     */
     public void setSuccessor(DoubleLink<T> successor) {
         if (this.successor != null && successor == null) {
             this.successor.setPredecessor(null);
@@ -56,12 +75,66 @@ public class DoubleLink<T> implements BackLink<DoubleLink<T>>, ForthLink<DoubleL
         this.invalidateIndex();
     }
 
+    /**
+     *
+     * @return
+     */
+    public DoubleLink<T> first() {
+        DoubleLink<T> currentLink = this;
+        while (currentLink != null) {
+            currentLink = currentLink.getPredecessor();
+        }
+        return currentLink;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public DoubleLink<T> last() {
+        DoubleLink<T> currentLink = this;
+        while (currentLink != null) {
+            currentLink = currentLink.getSuccessor();
+        }
+        return currentLink;
+    }
+
+    /**
+     *
+     * @return
+     */
     public T getValue() {
         return value;
     }
 
+    /**
+     *
+     * @param value
+     */
     public void setValue(T value) {
         this.value = value;
+    }
+
+    /**
+     *
+     * @param value
+     * @return
+     */
+    public DoubleLink<T> prepend(T value) {
+        DoubleLink<T> link = new DoubleLink<>(value);
+        this.setPredecessor(link);
+        return link;
+    }
+
+    /**
+     *
+     * @param value
+     * @return
+     */
+    public DoubleLink<T> append(T value) {
+        DoubleLink<T> link = new DoubleLink<>(value);
+        this.setSuccessor(link);
+        return link;
     }
 
     @Override

@@ -7,6 +7,7 @@ package tschuba.util.props;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Stack;
 import tschuba.util.collection.DoubleLink;
 
@@ -18,11 +19,19 @@ public class PropertiesMerger {
 
     private Map<String, DoubleLink<PropertiesSection>> sectionMap = new LinkedHashMap<>();
     private DoubleLink<PropertiesSection> lastLink;
+    private DoubleLink<PropertiesSection> lastBuffereredLink;
 
+    /**
+     * Default constructor
+     */
     public PropertiesMerger() {
-
+        super();
     }
 
+    /**
+     *
+     * @param reader
+     */
     public void add(PropertiesReader reader) {
         if (this.sectionMap.isEmpty()) {
             this.addFirstFile(reader);
@@ -31,6 +40,10 @@ public class PropertiesMerger {
         }
     }
 
+    /**
+     *
+     * @param reader
+     */
     private void addFirstFile(PropertiesReader reader) {
         while (reader.hasNext()) {
             PropertiesSection section = reader.next();
@@ -38,24 +51,40 @@ public class PropertiesMerger {
         }
     }
 
+    /**
+     *
+     * @param reader
+     */
     private void addAdditionalFile(PropertiesReader reader) {
         Stack<PropertiesSection> sectionStack = new Stack<>();
         DoubleLink<PropertiesSection> anchor = null;
         while (reader.hasNext()) {
             PropertiesSection section = reader.next();
-            DoubleLink<PropertiesSection> linkForKey = null;
             String key = section.getKey();
             if (key != null) {
-                linkForKey = sectionMap.get(key);
+                DoubleLink<PropertiesSection> linkForKey = sectionMap.get(key);
                 if (linkForKey != null) {
                     linkForKey.setValue(section);
+
+                    if (lastBuffereredLink != null) {
+                        if (anchor == null) {
+                            linkForKey.setPredecessor(lastBuffereredLink);
+                        } else {
+                            anchor.setSuccessor(lastBuffereredLink);
+                        }
+                    }
+
                     anchor = linkForKey;
+
                 } else {
-                    linkForKey = this.addSectionToEnd(section);
+                    this.addSectionToEnd(section);
+
                 }
-                anchor = linkForKey;
+            } else {
+
             }
 
+            // TODO: merge
         }
     }
 
@@ -71,5 +100,17 @@ public class PropertiesMerger {
         }
         lastLink = link;
         return link;
+    }
+
+    /**
+     *
+     * @param section
+     */
+    private void buffer(PropertiesSection section) {
+        DoubleLink<PropertiesSection> sectionLink = new DoubleLink<>(section);
+        if (this.lastBuffereredLink != null) {
+            this.lastBuffereredLink.setSuccessor(sectionLink);
+        }
+        this.lastBuffereredLink = sectionLink;
     }
 }
