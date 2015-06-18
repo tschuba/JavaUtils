@@ -1,9 +1,11 @@
 package tschuba.util.collection;
 
 /**
+ * Link using backward and forward linking. Can hold a value and maintains index
+ * in its chain.
  *
  * @author tsc
- * @param <T>
+ * @param <T> the value's type
  */
 public class DoubleLink<T> implements BackLink<DoubleLink<T>>, ForthLink<DoubleLink<T>> {
 
@@ -13,13 +15,14 @@ public class DoubleLink<T> implements BackLink<DoubleLink<T>>, ForthLink<DoubleL
     private T value;
 
     /**
-     *
+     * Creates a new empty link for specified value.
      */
     public DoubleLink() {
         super();
     }
 
     /**
+     * Creates a new link for specified value.
      *
      * @param value
      */
@@ -28,8 +31,7 @@ public class DoubleLink<T> implements BackLink<DoubleLink<T>>, ForthLink<DoubleL
     }
 
     /**
-     *
-     * @return
+     * @return index of this link in its chain.
      */
     public int getIndex() {
         return index;
@@ -41,8 +43,9 @@ public class DoubleLink<T> implements BackLink<DoubleLink<T>>, ForthLink<DoubleL
     }
 
     /**
+     * Sets the predecessor.
      *
-     * @param predecessor
+     * @param predecessor the predecessor
      */
     public void setPredecessor(DoubleLink<T> predecessor) {
         if (this.predecessor != null && predecessor == null) {
@@ -61,8 +64,9 @@ public class DoubleLink<T> implements BackLink<DoubleLink<T>>, ForthLink<DoubleL
     }
 
     /**
+     * Sets the successor.
      *
-     * @param successor
+     * @param successor the new successor
      */
     public void setSuccessor(DoubleLink<T> successor) {
         if (this.successor != null && successor == null) {
@@ -76,8 +80,8 @@ public class DoubleLink<T> implements BackLink<DoubleLink<T>>, ForthLink<DoubleL
     }
 
     /**
-     *
-     * @return
+     * @return returns the first link in this chain by iterating through
+     * predecessors.
      */
     public DoubleLink<T> first() {
         DoubleLink<T> currentLink = this;
@@ -88,8 +92,8 @@ public class DoubleLink<T> implements BackLink<DoubleLink<T>>, ForthLink<DoubleL
     }
 
     /**
-     *
-     * @return
+     * @return returns the last link in this chain by iterating through
+     * successors.
      */
     public DoubleLink<T> last() {
         DoubleLink<T> currentLink = this;
@@ -100,25 +104,29 @@ public class DoubleLink<T> implements BackLink<DoubleLink<T>>, ForthLink<DoubleL
     }
 
     /**
+     * Gets the value.
      *
-     * @return
+     * @return the value
      */
     public T getValue() {
         return value;
     }
 
     /**
+     * Sets the value.
      *
-     * @param value
+     * @param value the new value.
      */
     public void setValue(T value) {
         this.value = value;
     }
 
     /**
+     * Prepends a value by creating a new link for it and inserting that link
+     * between this link and its predecessor.
      *
-     * @param value
-     * @return
+     * @param value the value to insert.
+     * @return the link created for the value.
      */
     public DoubleLink<T> prepend(T value) {
         DoubleLink<T> link = new DoubleLink<>(value);
@@ -127,9 +135,11 @@ public class DoubleLink<T> implements BackLink<DoubleLink<T>>, ForthLink<DoubleL
     }
 
     /**
+     * Appends a value by creating a new link for it and inserting that link
+     * between this link and its successor.
      *
-     * @param value
-     * @return
+     * @param value the value to insert.
+     * @return the link created for the value.
      */
     public DoubleLink<T> append(T value) {
         DoubleLink<T> link = new DoubleLink<>(value);
@@ -152,9 +162,8 @@ public class DoubleLink<T> implements BackLink<DoubleLink<T>>, ForthLink<DoubleL
     }
 
     /**
-     *
-     * @param index
-     * @return
+     * @param index index of the link to find
+     * @return returns a link from the chain by its index.
      */
     public DoubleLink<T> findByIndex(int index) {
         DoubleLink<T> currentLink = this;
@@ -169,9 +178,8 @@ public class DoubleLink<T> implements BackLink<DoubleLink<T>>, ForthLink<DoubleL
     }
 
     /**
-     *
-     * @param index
-     * @return
+     * @param index index determining direction
+     * @return returns the next link closest to given index.
      */
     private DoubleLink<T> getLinkClosestToIndex(int index) {
         if (this.index < index) {
@@ -184,7 +192,7 @@ public class DoubleLink<T> implements BackLink<DoubleLink<T>>, ForthLink<DoubleL
     }
 
     /**
-     *
+     * Invalidates and recalculates index.
      */
     private void invalidateIndex() {
         int oldIndex = this.index,
