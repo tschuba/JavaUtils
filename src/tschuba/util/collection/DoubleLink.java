@@ -24,7 +24,7 @@ public class DoubleLink<T> implements BackLink<DoubleLink<T>>, ForthLink<DoubleL
     /**
      * Creates a new link for specified value.
      *
-     * @param value
+     * @param value the value
      */
     public DoubleLink(T value) {
         this.value = value;
