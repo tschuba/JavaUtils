@@ -15,9 +15,9 @@ import tschuba.util.queries.TemporalType;
  */
 public class MsSqlServerFormatter extends NativeSqlFormatterBase {
 
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("CONV'ERT('d'ate, ''MM/dd/yyyy'', 101)");
-    private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("CONV'ERT(time, ''HH:mm:ss.SSS'', 114)");
-    private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("CONV'ERT('d'atetime, ''yyyy-MM-dd HH:mm:ss.SSS'', 121)");
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("'CONVERT(date, '''MM/dd/yyyy''', 101)'");
+    private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("'CONVERT(time, '''HH:mm:ss.SSS''', 114)'");
+    private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("'CONVERT(datetime, '''yyyy-MM-dd HH:mm:ss.SSS''', 121)'");
 
     @Override
     public DateFormat getFormatByType(TemporalType type) {

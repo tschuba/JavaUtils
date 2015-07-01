@@ -11,7 +11,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -151,40 +150,38 @@ public class QueryBuilder implements Cloneable {
             if (component instanceof RawString) {
                 String rawString = component.toString();
                 Matcher matcher = PARAMETER_PATTERN.matcher(rawString);
-                if (matcher.matches()) {
-                    StringBuffer replacement = new StringBuffer();
-                    while (matcher.find()) {
-                        String parameter = matcher.group();
-                        Object value;
-                        if (parameter.startsWith(PARAMETER_PREFIX_NAMED)) {
-                            String name = parameter.substring(1);
-                            if (!namedParameters.containsKey(name)) {
-                                throw new IllegalStateException("No entry for named parameter " + name);
-                            }
-                            value = namedParameters.get(name);
-                        } else {
-                            int position;
-                            if (parameter.length() > 1) {
-                                position = Integer.parseInt(parameter.substring(1));
-                            } else {
-                                position = lastImplicitPositionalParameter++;
-                            }
-                            if (!positionalParameters.containsKey(position)) {
-                                throw new IllegalStateException("No entry for positional parameter " + position);
-                            }
-                            value = positionalParameters.get(position);
+                StringBuffer replacement = new StringBuffer();
+                while (matcher.find()) {
+                    String parameter = rawString.substring(matcher.start(), matcher.end())
+                    Object value;
+                    if (parameter.startsWith(PARAMETER_PREFIX_NAMED)) {
+                        String name = parameter.substring(1);
+                        if (!namedParameters.containsKey(name)) {
+                            throw new IllegalStateException("No entry for named parameter " + name);
                         }
-
-                        int position = builderClone.positionalParameters.size() + 1;
-                        builderClone.positionalParameters.put(position, value);
-
-                        // replace current parameter with implicit positional parameter
-                        matcher.appendReplacement(replacement, PARAMETER_PREFIX_POSITIONAL);
+                        value = namedParameters.get(name);
+                    } else {
+                        int position;
+                        if (parameter.length() > 1) {
+                            position = Integer.parseInt(parameter.substring(1));
+                        } else {
+                            position = lastImplicitPositionalParameter += 1;
+                        }
+                        if (!positionalParameters.containsKey(position)) {
+                            throw new IllegalStateException("No entry for positional parameter " + position);
+                        }
+                        value = positionalParameters.get(position);
                     }
-                    matcher.appendTail(replacement);
-                    // replace current raw string with new string containing only positional parameters
-                    component = new RawString(replacement.toString());
+
+                    int position = builderClone.positionalParameters.size() + 1;
+                    builderClone.positionalParameters.put(position, value);
+
+                    // replace current parameter with implicit positional parameter
+                    matcher.appendReplacement(replacement, PARAMETER_PREFIX_POSITIONAL);
                 }
+                matcher.appendTail(replacement);
+                // replace current raw string with new string containing only positional parameters
+                component = new RawString(replacement.toString());
             }
             builderClone.components.add(component);
         }
@@ -196,35 +193,35 @@ public class QueryBuilder implements Cloneable {
         int implicitPositionalParameter = 0;
         for (Object component : this.components) {
             if (component instanceof RawString) {
-                Matcher matcher = PARAMETER_PATTERN.matcher(component.toString());
-                if (matcher.matches()) {
-                    StringBuffer replacement = new StringBuffer();
-                    while (matcher.find()) {
-                        String parameter = matcher.group();
-                        if (parameter.startsWith(PARAMETER_PREFIX_POSITIONAL)) {
-                            int position;
-                            if (parameter.length() > 1) {
-                                position = Integer.parseInt(parameter.substring(1));
-                            } else {
-                                position = implicitPositionalParameter++;
-                            }
-                            String name = PARAMETER_PREFIX_POSITIONAL + position;
-                            if (!builderClone.namedParameters.containsKey(name)) {
-                                if (!this.positionalParameters.containsKey(position)) {
-                                    throw new IllegalStateException("No entry for positional parameter " + position);
-                                }
-                                Object value = this.positionalParameters.get(position);
-                                builderClone.namedParameters.put(PARAMETER_PREFIX_NAMED + name, value);
-                            }
-                            matcher.appendReplacement(replacement, name);
+                String rawString = component.toString();
+                Matcher matcher = PARAMETER_PATTERN.matcher(rawString);
+                StringBuffer replacement = new StringBuffer();
+                while (matcher.find()) {
+                    String parameter = rawString.substring(matcher.start(), matcher.end());
+                    if (parameter.startsWith(PARAMETER_PREFIX_POSITIONAL)) {
+                        int position;
+                        if (parameter.length() > 1) {
+                            position = Integer.parseInt(parameter.substring(1));
+                        } else {
+                            position = implicitPositionalParameter += 1;
                         }
+                        String name = PARAMETER_PREFIX_POSITIONAL + position;
+                        if (!builderClone.namedParameters.containsKey(name)) {
+                            if (!this.positionalParameters.containsKey(position)) {
+                                throw new IllegalStateException("No entry for positional parameter " + position);
+                            }
+                            Object value = this.positionalParameters.get(position);
+                            builderClone.namedParameters.put(PARAMETER_PREFIX_NAMED + name, value);
+                        }
+                        matcher.appendReplacement(replacement, name);
                     }
-                    matcher.appendTail(replacement);
-                    component = new RawString(replacement.toString());
                 }
+                matcher.appendTail(replacement);
+                component = new RawString(replacement.toString());
             }
             builderClone.components.add(component);
         }
+        builderClone.namedParameters.putAll(this.namedParameters);
         return builderClone;
     }
 
@@ -255,19 +252,19 @@ public class QueryBuilder implements Cloneable {
 
     public static void main(String[] args) {
         QueryBuilder sourceBuilder = new QueryBuilder();
-        sourceBuilder.raw("select col1 from table where col2=:col and col3=?2 amd col4=?");
-        sourceBuilder.rawParam("col1", "n1");
+        String sourceSql = "select col1 from table where col2=:col and col3=?2 amd col4=?";
+        sourceBuilder.raw(sourceSql);
+        sourceBuilder.rawParam("col", "n1");
         sourceBuilder.rawParam(1, "p1");
         sourceBuilder.rawParam(2, "p2");
-        String source = sourceBuilder.sql(SqlDialect.Oracle);
-        System.out.println("Source: " + source);
+        System.out.println("Source: " + sourceSql);
 
         QueryBuilder withPositionalParametersOnly = sourceBuilder.withPositionalParametersOnly();
-        String namedOnly = withPositionalParametersOnly.sql(SqlDialect.Oracle);
-        System.out.println("Named only: " + namedOnly);
+        String positionalOnly = withPositionalParametersOnly.sql(SqlDialect.MicrosoftSqlServer);
+        System.out.println("Positional only: " + positionalOnly);
 
         QueryBuilder withNamedParametersOnly = sourceBuilder.withNamedParametersOnly();
-        String positionalOnly = withNamedParametersOnly.sql(SqlDialect.MicrosoftSqlServer);
-        System.out.println("Positional only: " + positionalOnly);
+        String namedOnly = withNamedParametersOnly.sql(SqlDialect.Oracle);
+        System.out.println("Named only: " + namedOnly);
     }
 }
