@@ -13,11 +13,11 @@ import tschuba.util.queries.TemporalType;
  *
  * @author Thomas
  */
-public class MsSqlServerFormatter extends NativeSqlFormatterBase {
+public class JPQLQueryFormatter extends QueryLanguageFormatterBase {
 
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("'CONVERT(date, '''MM/dd/yyyy''', 101)'");
-    private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("'CONVERT(time, '''HH:mm:ss.SSS''', 114)'");
-    private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("'CONVERT(datetime, '''yyyy-MM-dd HH:mm:ss.SSS''', 121)'");
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("'{d'''yyyy-MM-dd'''}'");
+    private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("'{t'''HH:mm:ss'''}'");
+    private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("'{ts'''yyyy-MM-dd HH:mm:ss.SSSSSSSSS'''}'");
 
     @Override
     public DateFormat getFormatByType(TemporalType type) {
@@ -32,4 +32,5 @@ public class MsSqlServerFormatter extends NativeSqlFormatterBase {
                 throw new IllegalArgumentException();
         }
     }
+
 }

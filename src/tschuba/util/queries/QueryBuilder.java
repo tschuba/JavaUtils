@@ -14,12 +14,15 @@ import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import tschuba.util.queries.format.JPQLFormatter;
-import tschuba.util.queries.format.MsSqlServerFormatter;
-import tschuba.util.queries.format.OracleSqlFormatter;
+import tschuba.util.queries.converter.NamedParametersOnlyQueryConverter;
+import tschuba.util.queries.converter.PositionalParametersOnlyQueryConverter;
+import tschuba.util.queries.format.JPQLQueryFormatter;
+import tschuba.util.queries.format.MsSqlServerQueryFormatter;
+import tschuba.util.queries.format.OracleSqlQueryFormatter;
 
 /**
  *
@@ -27,9 +30,9 @@ import tschuba.util.queries.format.OracleSqlFormatter;
  */
 public class QueryBuilder implements Cloneable {
 
-    private static final JPQLFormatter JPQL_FORMATTER = new JPQLFormatter();
-    private static final MsSqlServerFormatter MS_SQL_FORMATTER = new MsSqlServerFormatter();
-    private static final OracleSqlFormatter ORACLE_FORMATTER = new OracleSqlFormatter();
+    private static final JPQLQueryFormatter JPQL_FORMATTER = new JPQLQueryFormatter();
+    private static final MsSqlServerQueryFormatter MS_SQL_FORMATTER = new MsSqlServerQueryFormatter();
+    private static final OracleSqlQueryFormatter ORACLE_FORMATTER = new OracleSqlQueryFormatter();
 
     private static final Pattern PARAMETER_PATTERN = Pattern.compile("\\?\\d*|:[\\w?]*");
     private static final String PARAMETER_PREFIX_NAMED = ":";
@@ -52,6 +55,13 @@ public class QueryBuilder implements Cloneable {
         }
     }
 
+    private Object unwrapParam(Object param) {
+        if (param instanceof Temporal) {
+            param = ((Temporal) param).getDate();
+        }
+        return param;
+    }
+
     /**
      * @return returns components of the
      */
@@ -60,12 +70,12 @@ public class QueryBuilder implements Cloneable {
     }
 
     /**
-     * Adds raw value/statement to this builder.
+     * Adds rawValue value/statement to this builder.
      *
-     * @param statement statement or raw value to add
+     * @param statement statement or rawValue value to add
      * @return query builder instance
      */
-    public QueryBuilder raw(String statement) {
+    public QueryBuilder rawValue(String statement) {
         Object lastComponent = this.lastComponent();
         if (lastComponent != null && lastComponent instanceof RawString) {
             ((RawString) lastComponent).append(statement);
@@ -131,6 +141,16 @@ public class QueryBuilder implements Cloneable {
         return this;
     }
 
+    public Object param(int position) {
+        Object parameter = this.positionalParameters.get(position);
+        return this.unwrapParam(parameter);
+    }
+
+    public Object param(String name) {
+        Object parameter = this.namedParameters.get(name);
+        return this.unwrapParam(parameter);
+    }
+
     public QueryBuilder rawParam(int position, String value) {
         RawString rawString = new RawString(value);
         this.positionalParameters.put(position, rawString);
@@ -143,86 +163,32 @@ public class QueryBuilder implements Cloneable {
         return this;
     }
 
+    public Enumeration<String> paramNames() {
+        Set<String> names = this.namedParameters.keySet();
+        return Collections.enumeration(names);
+    }
+
+    public Enumeration<Integer> paramPositions() {
+        Set<Integer> positions = this.positionalParameters.keySet();
+        return Collections.enumeration(positions);
+    }
+
+    public boolean hasParam(int position) {
+        return this.positionalParameters.containsKey(position);
+    }
+
+    public boolean hasParam(String name) {
+        return this.namedParameters.containsKey(name);
+    }
+
     public QueryBuilder withPositionalParametersOnly() {
-        QueryBuilder builderClone = new QueryBuilder();
-        int lastImplicitPositionalParameter = 0;
-        for (Object component : this.components) {
-            if (component instanceof RawString) {
-                String rawString = component.toString();
-                Matcher matcher = PARAMETER_PATTERN.matcher(rawString);
-                StringBuffer replacement = new StringBuffer();
-                while (matcher.find()) {
-                    String parameter = rawString.substring(matcher.start(), matcher.end())
-                    Object value;
-                    if (parameter.startsWith(PARAMETER_PREFIX_NAMED)) {
-                        String name = parameter.substring(1);
-                        if (!namedParameters.containsKey(name)) {
-                            throw new IllegalStateException("No entry for named parameter " + name);
-                        }
-                        value = namedParameters.get(name);
-                    } else {
-                        int position;
-                        if (parameter.length() > 1) {
-                            position = Integer.parseInt(parameter.substring(1));
-                        } else {
-                            position = lastImplicitPositionalParameter += 1;
-                        }
-                        if (!positionalParameters.containsKey(position)) {
-                            throw new IllegalStateException("No entry for positional parameter " + position);
-                        }
-                        value = positionalParameters.get(position);
-                    }
-
-                    int position = builderClone.positionalParameters.size() + 1;
-                    builderClone.positionalParameters.put(position, value);
-
-                    // replace current parameter with implicit positional parameter
-                    matcher.appendReplacement(replacement, PARAMETER_PREFIX_POSITIONAL);
-                }
-                matcher.appendTail(replacement);
-                // replace current raw string with new string containing only positional parameters
-                component = new RawString(replacement.toString());
-            }
-            builderClone.components.add(component);
-        }
-        return builderClone;
+        PositionalParametersOnlyQueryConverter converter = new PositionalParametersOnlyQueryConverter();
+        return converter.convert(this);
     }
 
     public QueryBuilder withNamedParametersOnly() {
-        QueryBuilder builderClone = new QueryBuilder();
-        int implicitPositionalParameter = 0;
-        for (Object component : this.components) {
-            if (component instanceof RawString) {
-                String rawString = component.toString();
-                Matcher matcher = PARAMETER_PATTERN.matcher(rawString);
-                StringBuffer replacement = new StringBuffer();
-                while (matcher.find()) {
-                    String parameter = rawString.substring(matcher.start(), matcher.end());
-                    if (parameter.startsWith(PARAMETER_PREFIX_POSITIONAL)) {
-                        int position;
-                        if (parameter.length() > 1) {
-                            position = Integer.parseInt(parameter.substring(1));
-                        } else {
-                            position = implicitPositionalParameter += 1;
-                        }
-                        String name = PARAMETER_PREFIX_POSITIONAL + position;
-                        if (!builderClone.namedParameters.containsKey(name)) {
-                            if (!this.positionalParameters.containsKey(position)) {
-                                throw new IllegalStateException("No entry for positional parameter " + position);
-                            }
-                            Object value = this.positionalParameters.get(position);
-                            builderClone.namedParameters.put(PARAMETER_PREFIX_NAMED + name, value);
-                        }
-                        matcher.appendReplacement(replacement, name);
-                    }
-                }
-                matcher.appendTail(replacement);
-                component = new RawString(replacement.toString());
-            }
-            builderClone.components.add(component);
-        }
-        builderClone.namedParameters.putAll(this.namedParameters);
-        return builderClone;
+        NamedParametersOnlyQueryConverter converter = new NamedParametersOnlyQueryConverter();
+        return converter.convert(this);
     }
 
     public String sql(SqlDialect dialect) {
@@ -253,7 +219,7 @@ public class QueryBuilder implements Cloneable {
     public static void main(String[] args) {
         QueryBuilder sourceBuilder = new QueryBuilder();
         String sourceSql = "select col1 from table where col2=:col and col3=?2 amd col4=?";
-        sourceBuilder.raw(sourceSql);
+        sourceBuilder.rawValue(sourceSql);
         sourceBuilder.rawParam("col", "n1");
         sourceBuilder.rawParam(1, "p1");
         sourceBuilder.rawParam(2, "p2");

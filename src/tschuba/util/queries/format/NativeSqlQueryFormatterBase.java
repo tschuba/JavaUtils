@@ -11,7 +11,7 @@ import tschuba.util.queries.QueryBuilder;
  *
  * @author Thomas
  */
-public abstract class NativeSqlFormatterBase extends QueryLanguageFormatterBase {
+public abstract class NativeSqlQueryFormatterBase extends QueryLanguageFormatterBase {
 
     @Override
     public String format(QueryBuilder builder) {
