@@ -15,9 +15,9 @@ import tschuba.util.queries.TemporalType;
  */
 public class OracleSqlFormatter extends NativeSqlFormatterBase {
 
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("'DAT'E(''yyyy-MM-dd'')");
-    private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("TI'M'E(''HH:mm:ss.SSSSSS'')");
-    private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("TI'M'E'STA'MP(''yyyy-MM-dd HH:mm:ss.SSSSSS'')");
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("'DATE('''yyyy-MM-dd''')'");
+    private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("'TIME('''HH:mm:ss.SSSSSS''')'");
+    private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("'TIMESTAMP('''yyyy-MM-dd HH:mm:ss.SSSSSS''')'");
 
     @Override
     public DateFormat getFormatByType(TemporalType type) {
