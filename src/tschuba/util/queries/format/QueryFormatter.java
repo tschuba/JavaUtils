@@ -14,6 +14,6 @@ import tschuba.util.queries.QueryBuilder;
  */
 public interface QueryFormatter<F> {
 
-    public F format(QueryBuilder builder);
+    public F format(QueryBuilder builder, boolean includeParameters);
 
 }

@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import tschuba.util.queries.converter.NamedParametersOnlyQueryConverter;
 import tschuba.util.queries.converter.PositionalParametersOnlyQueryConverter;
@@ -28,7 +27,7 @@ import tschuba.util.queries.format.OracleSqlQueryFormatter;
  *
  * @author tsc
  */
-public class QueryBuilder implements Cloneable {
+public class QueryBuilder implements Parametrized {
 
     private static final JPQLQueryFormatter JPQL_FORMATTER = new JPQLQueryFormatter();
     private static final MsSqlServerQueryFormatter MS_SQL_FORMATTER = new MsSqlServerQueryFormatter();
@@ -191,7 +190,7 @@ public class QueryBuilder implements Cloneable {
         return converter.convert(this);
     }
 
-    public String sql(SqlDialect dialect) {
+    public String sql(SqlDialect dialect, boolean includeParameters) {
         QueryFormatter<String> formatter;
         if (dialect == null) {
             throw new IllegalArgumentException("No dialect specified");
@@ -203,7 +202,7 @@ public class QueryBuilder implements Cloneable {
             throw new IllegalArgumentException("Unknown SQL Dialact " + dialect.name());
         }
 
-        String sql = formatter.format(this);
+        String sql = formatter.format(this, includeParameters);
         return sql;
     }
 
@@ -212,8 +211,8 @@ public class QueryBuilder implements Cloneable {
         return jpql;
     }
 
-    public <T> T format(QueryFormatter<T> formatter) {
-        return formatter.format(this);
+    public <T> T format(QueryFormatter<T> formatter, boolean includeParameters) {
+        return formatter.format(this, includeParameters);
     }
 
     public static void main(String[] args) {
@@ -226,11 +225,11 @@ public class QueryBuilder implements Cloneable {
         System.out.println("Source: " + sourceSql);
 
         QueryBuilder withPositionalParametersOnly = sourceBuilder.withPositionalParametersOnly();
-        String positionalOnly = withPositionalParametersOnly.sql(SqlDialect.MicrosoftSqlServer);
+        String positionalOnly = withPositionalParametersOnly.sql(SqlDialect.MicrosoftSqlServer, false);
         System.out.println("Positional only: " + positionalOnly);
 
         QueryBuilder withNamedParametersOnly = sourceBuilder.withNamedParametersOnly();
-        String namedOnly = withNamedParametersOnly.sql(SqlDialect.Oracle);
+        String namedOnly = withNamedParametersOnly.sql(SqlDialect.Oracle, false);
         System.out.println("Named only: " + namedOnly);
     }
 }

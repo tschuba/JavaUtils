@@ -38,10 +38,7 @@ public class NamedParametersOnlyQueryConverter implements QueryConverter {
                             position = implicitPositionalParameter += 1;
                         }
                         String name = QueryBuilderConstants.Parameter.PREFIX_POSITIONAL + position;
-                        if (!builderClone.hasParam(name)) {
-                            if (!builder.hasParam(position)) {
-                                throw new IllegalStateException("No entry for positional parameter " + position);
-                            }
+                        if (!builderClone.hasParam(name) && builder.hasParam(position)) {
                             Object value = builder.param(position);
                             builderClone.param(name, value);
                         }

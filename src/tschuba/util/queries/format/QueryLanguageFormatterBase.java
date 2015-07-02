@@ -10,8 +10,10 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.regex.Matcher;
 import tschuba.util.queries.In;
 import tschuba.util.queries.QueryBuilder;
+import tschuba.util.queries.QueryBuilderConstants;
 import tschuba.util.queries.Temporal;
 import tschuba.util.queries.TemporalType;
 
@@ -22,49 +24,84 @@ import tschuba.util.queries.TemporalType;
 public abstract class QueryLanguageFormatterBase implements QueryFormatter<String> {
 
     @Override
-    public String format(QueryBuilder builder) {
-        StringBuilder sql = new StringBuilder();
+    public String format(QueryBuilder builder, boolean includeParameters) {
+        // create SQL string from
+        StringBuilder sqlBuilder = new StringBuilder();
         final Enumeration<Object> components = builder.components();
         if (components != null) {
             Object component;
             while (components.hasMoreElements()) {
                 component = components.nextElement();
-                String sqlComponent = this.formatComponent(component);
-                sql.append(sqlComponent);
+                String sqlComponent = this.format(component);
+                sqlBuilder.append(sqlComponent);
             }
         }
-        return sql.toString();
+        String sql = sqlBuilder.toString();
+        if (includeParameters) {
+            StringBuffer sqlBuffer = new StringBuffer();
+            Matcher matcher = QueryBuilderConstants.Parameter.PATTERN.matcher(sql);
+            int implicitPosition = 0;
+            while (matcher.find()) {
+                Object value;
+                String parameter = sql.substring(matcher.start(), matcher.end());
+                if (parameter.startsWith(QueryBuilderConstants.Parameter.PREFIX_NAMED)) {
+                    String name = parameter.substring(QueryBuilderConstants.Parameter.PREFIX_NAMED.length());
+                    if (!builder.hasParam(name)) {
+                        continue;
+                    }
+                    value = builder.param(name);
+                } else {
+                    int minSize = QueryBuilderConstants.Parameter.PREFIX_POSITIONAL.length();
+                    int position;
+                    if (parameter.length() > minSize) {
+                        position = Integer.parseInt(parameter.substring(minSize));
+                    } else {
+                        position = implicitPosition += 1;
+                    }
+                    if (!builder.hasParam(position)) {
+                        continue;
+                    }
+                    value = builder.param(position);
+                }
+                // replace placeholder for parameter with formatted value
+                String replacement = this.format(value);
+                matcher.appendReplacement(sqlBuffer, replacement);
+            }
+            matcher.appendTail(sqlBuffer);
+            sql = sqlBuffer.toString();
+        }
+        return sql;
     }
 
-    public String formatComponent(Object component) {
-        if (component instanceof Temporal) {
-            Temporal temporal = (Temporal) component;
+    public String format(Object object) {
+        if (object instanceof Temporal) {
+            Temporal temporal = (Temporal) object;
             return this.formatTemporal(temporal.getDate(), temporal.getType());
 
-        } else if (component instanceof Timestamp) {
-            return this.formatTemporal((Timestamp) component, TemporalType.DATE_TIME);
+        } else if (object instanceof Timestamp) {
+            return this.formatTemporal((Timestamp) object, TemporalType.DATE_TIME);
 
-        } else if (component instanceof Time) {
-            return this.formatTemporal((Time) component, TemporalType.TIME);
+        } else if (object instanceof Time) {
+            return this.formatTemporal((Time) object, TemporalType.TIME);
 
-        } else if (component instanceof Date || component instanceof java.sql.Date) {
-            return this.formatTemporal((Date) component, TemporalType.DATE);
+        } else if (object instanceof Date || object instanceof java.sql.Date) {
+            return this.formatTemporal((Date) object, TemporalType.DATE);
 
-        } else if (component instanceof String) {
-            return "'" + component + "'";
+        } else if (object instanceof String) {
+            return "'" + object + "'";
 
-        } else if (component instanceof In) {
-            String formattedList = this.formatIterableComponent(((In) component).values());
+        } else if (object instanceof In) {
+            String formattedList = this.formatIterableComponent(((In) object).values());
             return " IN(" + formattedList + ")";
 
-        } else if (component instanceof Iterable) {
-            return this.formatIterableComponent((Iterable<Object>) component);
+        } else if (object instanceof Iterable) {
+            return this.formatIterableComponent((Iterable<Object>) object);
 
-        } else if (component == null) {
-            return this.formatNullComponent();
+        } else if (object == null) {
+            return this.formatNull();
 
         } else {
-            return "" + component;
+            return "" + object;
 
         }
     }
@@ -75,21 +112,21 @@ public abstract class QueryLanguageFormatterBase implements QueryFormatter<Strin
             if (formattedComponent.length() > 0) {
                 formattedComponent.append(",");
             }
-            String formattedElement = this.formatComponent(element);
+            String formattedElement = this.format(element);
             formattedComponent.append(formattedElement);
         }
         return formattedComponent.toString();
     }
 
-    public String formatNullComponent() {
+    public String formatNull() {
         return " IS NULL";
     }
-    
+
     public String formatTemporal(Date date, TemporalType type) {
         DateFormat formatter = this.getFormatByType(type);
         return formatter.format(date);
     }
-    
+
     public abstract DateFormat getFormatByType(TemporalType type);
 
 }

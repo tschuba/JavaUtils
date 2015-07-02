@@ -5,25 +5,23 @@
  */
 package tschuba.util.queries.format;
 
-import java.util.Enumeration;
-import tschuba.util.queries.QueryBuilder;
+import java.text.DateFormat;
+import tschuba.util.queries.TemporalType;
 
 /**
  *
  * @author Thomas
  */
-public class PlainStringQueryFormatter implements QueryFormatter<String> {
+public class PlainStringQueryFormatter extends QueryLanguageFormatterBase {
 
     @Override
-    public String format(QueryBuilder builder) {
-        StringBuilder plainStringBuilder = new StringBuilder();
-        Enumeration<Object> components = builder.components();
-        while (components.hasMoreElements()) {
-            final Object component = components.nextElement();
-            plainStringBuilder.append(component);
-        }
-        // TODO: include parameters
-        return plainStringBuilder.toString();
+    public String format(Object object) {
+        return "" + object;
     }
-    
+
+    @Override
+    public DateFormat getFormatByType(TemporalType type) {
+        throw new UnsupportedOperationException("Not supported!");
+    }
+
 }

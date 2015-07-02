@@ -31,13 +31,14 @@ public class PositionalParametersOnlyQueryConverter implements QueryConverter {
                 StringBuffer replacement = new StringBuffer();
                 while (matcher.find()) {
                     String parameter = rawString.substring(matcher.start(), matcher.end());
-                    Object value;
+
+                    boolean hasParam;
+                    Object value = null;
                     if (parameter.startsWith(QueryBuilderConstants.Parameter.PREFIX_NAMED)) {
                         String name = parameter.substring(1);
-                        if (!builder.hasParam(name)) {
-                            throw new IllegalStateException("No entry for named parameter " + name);
+                        if (hasParam = builder.hasParam(name)) {
+                            value = builder.param(name);
                         }
-                        value = builder.param(name);
                     } else {
                         int position;
                         if (parameter.length() > 1) {
@@ -45,14 +46,15 @@ public class PositionalParametersOnlyQueryConverter implements QueryConverter {
                         } else {
                             position = lastImplicitPositionalParameter += 1;
                         }
-                        if (!builder.hasParam(position)) {
-                            throw new IllegalStateException("No entry for positional parameter " + position);
+                        if (hasParam = builder.hasParam(position)) {
+                            value = builder.param(position);
                         }
-                        value = builder.param(position);
                     }
 
-                    positionalParameterCount = positionalParameterCount += 1;
-                    builderClone.param(positionalParameterCount, value);
+                    if (hasParam) {
+                        positionalParameterCount = positionalParameterCount += 1;
+                        builderClone.param(positionalParameterCount, value);
+                    }
 
                     // replace current parameter with implicit positional parameter
                     matcher.appendReplacement(replacement, QueryBuilderConstants.Parameter.PREFIX_POSITIONAL);

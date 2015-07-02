@@ -14,10 +14,10 @@ import tschuba.util.queries.QueryBuilder;
 public abstract class NativeSqlQueryFormatterBase extends QueryLanguageFormatterBase {
 
     @Override
-    public String format(QueryBuilder builder) {
+    public String format(QueryBuilder builder, boolean includeParameters) {
         // transform named to positional parameters
         QueryBuilder withPositionParametersOnly = builder.withPositionalParametersOnly();
-        return super.format(withPositionParametersOnly);
+        return super.format(withPositionParametersOnly, includeParameters);
     }
 
 }
