@@ -12,6 +12,13 @@ import tschuba.util.queries.QueryBuilderConstants;
 import tschuba.util.queries.RawString;
 
 /**
+ * Converter to replace named with positional parameters in a QueryBuilder. All
+ * named and positional parameters are reassigned by their position inside the
+ * builder's query. Positional parameters probably do not retain their original
+ * position! The {@link #convert(tschuba.util.queries.QueryBuilder)} method
+ * creates a full copy of the QueryBuilder specified so the original
+ * QueryBuilder won't get touched. For the other way round
+ * {@link NamedParametersOnlyQueryConverter} can be used.
  *
  * @author Thomas
  */

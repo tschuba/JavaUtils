@@ -12,7 +12,7 @@ import java.util.Objects;
  *
  * @author Thomas
  */
-public class Temporal {
+public class Temporal implements Wrapper<Date> {
 
     private final Date date;
     private final TemporalType type;
@@ -28,6 +28,11 @@ public class Temporal {
 
     public TemporalType getType() {
         return type;
+    }
+
+    @Override
+    public Date unwrap() {
+        return date;
     }
 
     @Override

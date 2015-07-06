@@ -19,6 +19,13 @@ public class OracleSqlQueryFormatter extends NativeSqlQueryFormatterBase {
     private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("'TIME('''HH:mm:ss.SSSSSS''')'");
     private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("'TIMESTAMP('''yyyy-MM-dd HH:mm:ss.SSSSSS''')'");
 
+    public OracleSqlQueryFormatter() {
+    }
+
+    public OracleSqlQueryFormatter(boolean includeParameters) {
+        super(includeParameters);
+    }
+
     @Override
     public DateFormat getFormatByType(TemporalType type) {
         switch (type) {

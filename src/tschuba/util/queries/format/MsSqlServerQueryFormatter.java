@@ -19,6 +19,14 @@ public class MsSqlServerQueryFormatter extends NativeSqlQueryFormatterBase {
     private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("'CONVERT(time, '''HH:mm:ss.SSS''', 114)'");
     private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("'CONVERT(datetime, '''yyyy-MM-dd HH:mm:ss.SSS''', 121)'");
 
+    public MsSqlServerQueryFormatter() {
+        super();
+    }
+
+    public MsSqlServerQueryFormatter(boolean includeParameters) {
+        super(includeParameters);
+    }
+
     @Override
     public DateFormat getFormatByType(TemporalType type) {
         switch (type) {

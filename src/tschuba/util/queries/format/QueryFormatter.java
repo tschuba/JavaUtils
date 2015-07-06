@@ -8,12 +8,19 @@ package tschuba.util.queries.format;
 import tschuba.util.queries.QueryBuilder;
 
 /**
+ * Interface to be implemented by implementations to format a QueryBuilder into
+ * a specific output format.
  *
  * @author Thomas
- * @param <F>
+ * @param <F> type of the output created from QueryBuilder input
  */
 public interface QueryFormatter<F> {
 
-    public F format(QueryBuilder builder, boolean includeParameters);
+    /**
+     * Converts from one 
+     * @param builder
+     * @return 
+     */
+    public F format(QueryBuilder builder);
 
 }

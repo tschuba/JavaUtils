@@ -11,7 +11,7 @@ import java.util.Date;
  *
  * @author Thomas
  */
-public class Temporals {
+public class Temporals implements Wrapper<Iterable<? extends Date>> {
 
     private final Iterable<? extends Date> dates;
     private final TemporalType type;
@@ -27,6 +27,11 @@ public class Temporals {
 
     public TemporalType getType() {
         return type;
+    }
+
+    @Override
+    public Iterable<? extends Date> unwrap() {
+        return this.dates;
     }
 
     @Override

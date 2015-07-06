@@ -14,6 +14,14 @@ import tschuba.util.queries.TemporalType;
  */
 public class PlainStringQueryFormatter extends QueryLanguageFormatterBase {
 
+    public PlainStringQueryFormatter() {
+        super();
+    }
+
+    public PlainStringQueryFormatter(boolean includeParameters) {
+        super(includeParameters);
+    }
+
     @Override
     public String format(Object object) {
         return "" + object;

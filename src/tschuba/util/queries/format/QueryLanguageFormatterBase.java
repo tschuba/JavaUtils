@@ -22,9 +22,26 @@ import tschuba.util.queries.TemporalType;
  * @author Thomas
  */
 public abstract class QueryLanguageFormatterBase implements QueryFormatter<String> {
+    
+    private boolean includeParameters;
+
+    public QueryLanguageFormatterBase() {
+    }
+    
+    public QueryLanguageFormatterBase(boolean includeParameters) {
+        this.includeParameters = includeParameters;
+    }
+
+    public boolean isIncludeParameters() {
+        return includeParameters;
+    }
+
+    public void setIncludeParameters(boolean includeParameters) {
+        this.includeParameters = includeParameters;
+    }
 
     @Override
-    public String format(QueryBuilder builder, boolean includeParameters) {
+    public String format(QueryBuilder builder) {
         // create SQL string from
         StringBuilder sqlBuilder = new StringBuilder();
         final Enumeration<Object> components = builder.components();
@@ -37,7 +54,7 @@ public abstract class QueryLanguageFormatterBase implements QueryFormatter<Strin
             }
         }
         String sql = sqlBuilder.toString();
-        if (includeParameters) {
+        if (isIncludeParameters()) {
             StringBuffer sqlBuffer = new StringBuffer();
             Matcher matcher = QueryBuilderConstants.Parameter.PATTERN.matcher(sql);
             int implicitPosition = 0;

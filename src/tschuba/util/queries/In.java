@@ -9,7 +9,7 @@ package tschuba.util.queries;
  *
  * @author Thomas
  */
-public class In {
+public class In implements Wrapper<Iterable<Object>>{
     
     private final Iterable<Object> values;
 
@@ -18,6 +18,11 @@ public class In {
     }
     
     public Iterable<Object> values() {
+        return this.values;
+    }
+
+    @Override
+    public Iterable<Object> unwrap() {
         return this.values;
     }
     

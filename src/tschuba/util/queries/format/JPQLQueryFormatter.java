@@ -19,6 +19,14 @@ public class JPQLQueryFormatter extends QueryLanguageFormatterBase {
     private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("'{t'''HH:mm:ss'''}'");
     private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("'{ts'''yyyy-MM-dd HH:mm:ss.SSSSSSSSS'''}'");
 
+    public JPQLQueryFormatter() {
+        super();
+    }
+
+    public JPQLQueryFormatter(boolean includeParameters) {
+        super(includeParameters);
+    }
+
     @Override
     public DateFormat getFormatByType(TemporalType type) {
         switch (type) {

@@ -11,7 +11,7 @@ import java.util.Objects;
  *
  * @author Thomas
  */
-public class RawString {
+public class RawString implements Wrapper<String> {
 
     StringBuilder rawStringBuilder;
 
@@ -25,6 +25,11 @@ public class RawString {
 
     public void append(String str) {
         this.rawStringBuilder.append(str);
+    }
+
+    @Override
+    public String unwrap() {
+        return rawStringBuilder.toString();
     }
 
     @Override
@@ -43,10 +48,7 @@ public class RawString {
             return false;
         }
         final RawString other = (RawString) obj;
-        if (!Objects.equals(this.rawStringBuilder, other.rawStringBuilder)) {
-            return false;
-        }
-        return true;
+        return Objects.equals(this.rawStringBuilder, other.rawStringBuilder);
     }
 
     @Override
