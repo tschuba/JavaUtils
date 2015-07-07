@@ -9,7 +9,7 @@ import java.util.Enumeration;
 import java.util.regex.Matcher;
 import tschuba.util.queries.QueryBuilder;
 import tschuba.util.queries.QueryBuilderConstants;
-import tschuba.util.queries.RawString;
+import tschuba.util.queries.wrapper.RawString;
 
 /**
  * Converter to replace named with positional parameters in a QueryBuilder. All
@@ -43,8 +43,8 @@ public class PositionalParametersOnlyQueryConverter implements QueryConverter {
                     Object value = null;
                     if (parameter.startsWith(QueryBuilderConstants.Parameter.PREFIX_NAMED)) {
                         String name = parameter.substring(1);
-                        if (hasParam = builder.hasParam(name)) {
-                            value = builder.param(name);
+                        if (hasParam = builder.isBound(name)) {
+                            value = builder.boundValue(name);
                         }
                     } else {
                         int position;
@@ -53,14 +53,14 @@ public class PositionalParametersOnlyQueryConverter implements QueryConverter {
                         } else {
                             position = lastImplicitPositionalParameter += 1;
                         }
-                        if (hasParam = builder.hasParam(position)) {
-                            value = builder.param(position);
+                        if (hasParam = builder.isBound(position)) {
+                            value = builder.boundValue(position);
                         }
                     }
 
                     if (hasParam) {
                         positionalParameterCount = positionalParameterCount += 1;
-                        builderClone.param(positionalParameterCount, value);
+                        builderClone.bind(positionalParameterCount, value);
                     }
 
                     // replace current parameter with implicit positional parameter
@@ -70,7 +70,7 @@ public class PositionalParametersOnlyQueryConverter implements QueryConverter {
                 // replace current rawValue string with new string containing only positional parameters
                 component = new RawString(replacement.toString());
             }
-            builderClone.value(component);
+            builderClone.add(component);
         }
         return builderClone;
     }

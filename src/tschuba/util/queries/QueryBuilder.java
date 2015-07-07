@@ -5,9 +5,11 @@
  */
 package tschuba.util.queries;
 
+import tschuba.util.queries.wrapper.Wrapper;
+import tschuba.util.queries.wrapper.Temporal;
+import tschuba.util.queries.wrapper.RawString;
 import java.sql.Time;
 import java.sql.Timestamp;
-import tschuba.util.queries.format.QueryFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -24,17 +26,19 @@ import tschuba.util.queries.format.JPQLQueryFormatter;
 import tschuba.util.queries.format.MsSqlServerQueryFormatter;
 import tschuba.util.queries.format.OracleSqlQueryFormatter;
 import tschuba.util.queries.format.PlainStringQueryFormatter;
+import tschuba.util.queries.format.QueryFormatter;
 import tschuba.util.queries.format.QueryLanguageFormatterBase;
 
 /**
  * The QueryBuilder is intended to ease and simplify the creation, manipulation
- * and transformation of queries, i.e. JPQL or SQL.
+ * and transformation of queries, i.e. JPQL or SQL. It manages components/parts
+ * of a query and value bindings.
+ * <br/>
+ * Output formatting is done by formatters implementing {@link QueryFormatter}.
  *
  * @author tsc
  */
-public class QueryBuilder implements Parametrized {
-
-    private static final JPQLQueryFormatter JPQL_FORMATTER = new JPQLQueryFormatter();
+public class QueryBuilder {
 
     private final List<Object> components = new ArrayList<>();
     private final Map<String, Object> namedParameters = new LinkedHashMap<>();
@@ -54,11 +58,10 @@ public class QueryBuilder implements Parametrized {
     }
 
     /**
-     * Extracts the original value if the specified value represents a wrapper
-     * like {@link Temporal}, {@link In}, {@link RawString
+     * Extracts the original add if the specified add represents a wrapper like {@link Temporal}, {@link In}, {@link RawString
      *
-     * @param value the value to unwrap
-     * @return the unwrapped value
+     * @param value the add to unwrap
+     * @return the unwrapped add
      */
     private Object unwrapParam(Object value) {
         if (value instanceof Wrapper) {
@@ -77,9 +80,9 @@ public class QueryBuilder implements Parametrized {
     }
 
     /**
-     * Adds a rawValue value or statement to this builder.
+     * Adds a rawValue add or statement to this builder.
      *
-     * @param statement statement or rawValue value to add
+     * @param statement statement or rawValue add to add
      * @return query builder instance
      */
     public QueryBuilder rawValue(String statement) {
@@ -94,57 +97,57 @@ public class QueryBuilder implements Parametrized {
     }
 
     /**
-     * Adds given value to the builder's components.
+     * Adds a add to the builder's components.
      *
-     * @param value the value to add
+     * @param value the add to add
      * @return query builder instance.
      */
-    public QueryBuilder value(Object value) {
+    public QueryBuilder add(Object value) {
         this.components.add(value);
         return this;
     }
 
     /**
-     * Adds a temporal value to the builder's components.
+     * Adds a value of temporal type to the builder's components.
      *
-     * @param date date value
-     * @param type type of the temporal value.
+     * @param date date add
+     * @param type type of the temporal add.
      * @return query builder instance.
      */
-    public QueryBuilder value(Date date, TemporalType type) {
+    public QueryBuilder add(Date date, TemporalType type) {
         Temporal temporal = new Temporal(date, type);
         this.components.add(temporal);
         return this;
     }
 
     /**
-     * Adds a timestamp to the builder's components by wrapping it into
+     * Adds a timestamp value to the builder's components by wrapping it into
      * {@link Temporal}.
      *
      * @param timestamp the timestamp
      * @return query builder instance.
      */
-    public QueryBuilder value(Timestamp timestamp) {
+    public QueryBuilder add(Timestamp timestamp) {
         Temporal temporal = new Temporal(timestamp, TemporalType.DATE_TIME);
         this.components.add(temporal);
         return this;
     }
 
     /**
-     * Adds a date to the builder's components by wrapping it into
+     * Adds a date value to the builder's components by wrapping it into
      * {@link Temporal}.
      *
      * @param date the date.
      * @return query builder instance.
      */
-    public QueryBuilder value(java.sql.Date date) {
+    public QueryBuilder add(java.sql.Date date) {
         Temporal temporal = new Temporal(date, TemporalType.DATE);
         this.components.add(temporal);
         return this;
     }
 
     /**
-     * Adds a time to the builder's components by wrapping it into
+     * Adds a time value to the builder's components by wrapping it into
      * {@link Temporal}.
      *
      * @param time the time.
@@ -156,106 +159,172 @@ public class QueryBuilder implements Parametrized {
         return this;
     }
 
-    public QueryBuilder in(Object... values) {
-        List<Object> valueList = Arrays.asList(values);
-        return this.in(valueList);
-    }
-
-    public QueryBuilder in(Iterable<?> values) {
-        this.components.add(values);
-        return this;
-    }
-
-    public QueryBuilder in(TemporalType type, Date... dates) {
-        List<Date> dateList = Arrays.asList(dates);
-        this.in(type, dateList);
-        return this;
-    }
-
-    public QueryBuilder in(TemporalType type, Iterable<? extends Date> dates) {
-        Temporals temporals = new Temporals(dates, type);
-        this.components.add(temporals);
-        return this;
-    }
-
-    public QueryBuilder param(int position, Object value) {
+    /**
+     * Binds a value to a positional parameter.
+     *
+     * @param position the positional parameter's position
+     * @param value the add to set for positional parameter
+     * @return query builder instance
+     */
+    public QueryBuilder bind(int position, Object value) {
         this.positionalParameters.put(position, value);
         return this;
     }
 
-    public QueryBuilder param(int position, Date date, TemporalType type) {
+    /**
+     * Binds a value of temporal type to a positional parameter.
+     *
+     * @param position the positional parameter's position
+     * @param date the add
+     * @param type the add's temporal type of the new add
+     * @return query builder instance
+     */
+    public QueryBuilder bind(int position, Date date, TemporalType type) {
         Temporal temporal = new Temporal(date, type);
         this.positionalParameters.put(position, temporal);
         return this;
     }
 
-    public QueryBuilder param(String name, Object value) {
+    /**
+     * Binds a value to a named parameter.
+     *
+     * @param name the named parameter's name
+     * @param value the add to set
+     * @return query builder instance
+     */
+    public QueryBuilder bind(String name, Object value) {
         this.namedParameters.put(name, value);
         return this;
     }
 
-    public QueryBuilder param(String name, Date date, TemporalType type) {
+    /**
+     * Binds a value of temporal type to a named parameter.
+     *
+     * @param name the parameter's name
+     * @param date the temporal add
+     * @param type the temporal add's type
+     * @return query builder instance
+     */
+    public QueryBuilder bind(String name, Date date, TemporalType type) {
         Temporal temporal = new Temporal(date, type);
-        this.namedParameters.put(name, date);
+        this.namedParameters.put(name, temporal);
         return this;
     }
 
-    @Override
-    public Object param(int position) {
+    /**
+     * Gets the value bound to a positional parameter.
+     *
+     * @param position the parameter's position
+     * @return add bound to the position
+     */
+    public Object boundValue(int position) {
         Object parameter = this.positionalParameters.get(position);
         return this.unwrapParam(parameter);
     }
 
-    @Override
-    public Object param(String name) {
+    /**
+     * Gets the value bound to a named parameter.
+     *
+     * @param name the parameter's name
+     * @return add bound to the name
+     */
+    public Object boundValue(String name) {
         Object parameter = this.namedParameters.get(name);
         return this.unwrapParam(parameter);
     }
 
-    public QueryBuilder rawParam(int position, String value) {
+    /**
+     * Binds a raw string add to a positional parameter. Using this method to
+     * bind the value prevents it from parsed as string by formatters.
+     *
+     * @param position the parameter's position
+     * @param value the raw add
+     * @return query builder instance
+     */
+    public QueryBuilder bindRaw(int position, String value) {
         RawString rawString = new RawString(value);
         this.positionalParameters.put(position, rawString);
         return this;
     }
 
-    public QueryBuilder rawParam(String name, String value) {
+    /**
+     * Binds a raw string add to a parameter's name. Using this method to bind
+     * the value prevents it from parsed as string by formatters.
+     *
+     * @param name the parameter's name
+     * @param value the raw string add
+     * @return query builder instance
+     */
+    public QueryBuilder bindRaw(String name, String value) {
         RawString rawString = new RawString(value);
         this.namedParameters.put(name, rawString);
         return this;
     }
 
-    @Override
-    public Enumeration<String> paramNames() {
+    /**
+     * @return returns an enumeration of names values were bound to.
+     */
+    public Enumeration<String> boundNames() {
         Set<String> names = this.namedParameters.keySet();
         return Collections.enumeration(names);
     }
 
-    @Override
-    public Enumeration<Integer> paramPositions() {
+    /**
+     * @return returns an enumeration of positions values were bound to.
+     */
+    public Enumeration<Integer> boundPositions() {
         Set<Integer> positions = this.positionalParameters.keySet();
         return Collections.enumeration(positions);
     }
 
-    @Override
-    public boolean hasParam(int position) {
+    /**
+     * @param position position to check for bound value
+     * @return returns {@code true} if a value is bound to the specified positon
+     */
+    public boolean isBound(int position) {
         return this.positionalParameters.containsKey(position);
     }
 
-    @Override
-    public boolean hasParam(String name) {
+    /**
+     *
+     * @param name name to check for bound value
+     * @return returns {@code true} if a value is bound to the specified name
+     */
+    public boolean isBound(String name) {
         return this.namedParameters.containsKey(name);
     }
 
+    /**
+     * @return returns a copy of this query builder with named parameters
+     * replaced by positional parameters.
+     * @see PositionalParametersOnlyQueryConverter
+     */
     public QueryBuilder withPositionalParametersOnly() {
         PositionalParametersOnlyQueryConverter converter = new PositionalParametersOnlyQueryConverter();
         return converter.convert(this);
     }
 
+    /**
+     * @return returns a copy of this query builder with positional parameters
+     * replaced by named parameters.
+     * @see NamedParametersOnlyQueryConverter
+     */
     public QueryBuilder withNamedParametersOnly() {
         NamedParametersOnlyQueryConverter converter = new NamedParametersOnlyQueryConverter();
         return converter.convert(this);
     }
 
+    /**
+     * Creates a native SQL statement based on this query builder using the
+     * specified dialect.
+     *
+     * @param dialect SQL dialect to use for output
+     * @param includeParameters if {@code true} parameters are replaced with
+     * their respective bound values
+     * @return native SQL statement
+     * @see MsSqlServerQueryFormatter
+     * @see OracleSqlQueryFormatter
+     */
     public String sql(SqlDialect dialect, boolean includeParameters) {
         QueryLanguageFormatterBase formatter;
         if (dialect == null) {
@@ -272,32 +341,47 @@ public class QueryBuilder implements Parametrized {
         return formatter.format(this);
     }
 
+    /**
+     * Creates a statement from this query builder using JPQL formats.
+     *
+     * @param includeParameters if {@code true} parameters are replaced with
+     * their respective bound values
+     * @return JPQL statement
+     * @see JPQLQueryFormatter
+     */
     public String jpql(boolean includeParameters) {
         JPQLQueryFormatter formatter = new JPQLQueryFormatter(includeParameters);
-
-        String jpql = JPQL_FORMATTER.format(this);
-        return jpql;
+        return formatter.format(this);
     }
 
-    public <T> T format(QueryFormatter<T> formatter) {
+    /**
+     * Creates a plain string from this query builder.
+     *
+     * @param includeParameters if {@code true} parameters are replaced with
+     * their respective bound values
+     * @return plain string
+     * @see PlainStringQueryFormatter
+     */
+    public String toPlainString(boolean includeParameters) {
+        PlainStringQueryFormatter formatter = new PlainStringQueryFormatter(includeParameters);
         return formatter.format(this);
     }
 
     public static void main(String[] args) {
         QueryBuilder sourceBuilder = new QueryBuilder();
         sourceBuilder.rawValue("select col1 from table where col2=:col and col3=?2 amd col4=?");
-        sourceBuilder.rawParam("col", "n1");
-        sourceBuilder.rawParam(1, "p1");
-        sourceBuilder.rawParam(2, "p2");
+        sourceBuilder.bindRaw("col", "n1");
+        sourceBuilder.bindRaw(1, "p1");
+        sourceBuilder.bindRaw(2, "p2");
         PlainStringQueryFormatter sourceFormatter = new PlainStringQueryFormatter();
         System.out.println("Source: " + sourceFormatter.format(sourceBuilder));
 
         QueryBuilder withPositionalParametersOnly = sourceBuilder.withPositionalParametersOnly();
-        String positionalOnly = withPositionalParametersOnly.sql(SqlDialect.MicrosoftSqlServer, true);
+        String positionalOnly = withPositionalParametersOnly.toPlainString(false);
         System.out.println("Positional only: " + positionalOnly);
 
         QueryBuilder withNamedParametersOnly = sourceBuilder.withNamedParametersOnly();
-        String namedOnly = withNamedParametersOnly.sql(SqlDialect.Oracle, true);
+        String namedOnly = withNamedParametersOnly.toPlainString(false);
         System.out.println("Named only: " + namedOnly);
     }
 }

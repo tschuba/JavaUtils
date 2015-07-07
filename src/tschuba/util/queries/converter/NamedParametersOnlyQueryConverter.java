@@ -9,7 +9,7 @@ import java.util.Enumeration;
 import java.util.regex.Matcher;
 import tschuba.util.queries.QueryBuilder;
 import tschuba.util.queries.QueryBuilderConstants;
-import tschuba.util.queries.RawString;
+import tschuba.util.queries.wrapper.RawString;
 
 /**
  * Converter to replace positional with named parameters in a QueryBuilder. All
@@ -44,23 +44,23 @@ public class NamedParametersOnlyQueryConverter implements QueryConverter {
                             position = implicitPositionalParameter += 1;
                         }
                         String name = QueryBuilderConstants.Parameter.PREFIX_POSITIONAL + position;
-                        if (!builderClone.hasParam(name) && builder.hasParam(position)) {
-                            Object value = builder.param(position);
-                            builderClone.param(name, value);
+                        if (!builderClone.isBound(name) && builder.isBound(position)) {
+                            Object value = builder.boundValue(position);
+                            builderClone.bind(name, value);
                         }
-                        matcher.appendReplacement(replacement, name);
+                        matcher.appendReplacement(replacement, QueryBuilderConstants.Parameter.PREFIX_NAMED + name);
                     }
                 }
                 matcher.appendTail(replacement);
                 component = new RawString(replacement.toString());
             }
-            builderClone.value(component);
+            builderClone.add(component);
         }
 
-        Enumeration<String> names = builder.paramNames();
+        Enumeration<String> names = builder.boundNames();
         while (names.hasMoreElements()) {
             String name = names.nextElement();
-            builderClone.param(name, builder.param(name));
+            builderClone.bind(name, builder.boundValue(name));
         }
 
         return builderClone;

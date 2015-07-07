@@ -3,10 +3,11 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package tschuba.util.queries;
+package tschuba.util.queries.wrapper;
 
 import java.util.Date;
 import java.util.Objects;
+import tschuba.util.queries.TemporalType;
 
 /**
  *
