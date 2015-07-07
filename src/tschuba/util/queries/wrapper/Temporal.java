@@ -56,10 +56,7 @@ public class Temporal implements Wrapper<Date> {
         if (!Objects.equals(this.date, other.date)) {
             return false;
         }
-        if (this.type != other.type) {
-            return false;
-        }
-        return true;
+        return (this.type == other.type);
     }
 
     @Override

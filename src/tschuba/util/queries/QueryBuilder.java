@@ -38,7 +38,7 @@ import tschuba.util.queries.format.QueryLanguageFormatterBase;
  *
  * @author tsc
  */
-public class QueryBuilder {
+public class QueryBuilder implements Cloneable {
 
     private final List<Object> components = new ArrayList<>();
     private final Map<String, Object> namedParameters = new LinkedHashMap<>();
@@ -212,28 +212,6 @@ public class QueryBuilder {
     }
 
     /**
-     * Gets the value bound to a positional parameter.
-     *
-     * @param position the parameter's position
-     * @return add bound to the position
-     */
-    public Object boundValue(int position) {
-        Object parameter = this.positionalParameters.get(position);
-        return this.unwrapParam(parameter);
-    }
-
-    /**
-     * Gets the value bound to a named parameter.
-     *
-     * @param name the parameter's name
-     * @return add bound to the name
-     */
-    public Object boundValue(String name) {
-        Object parameter = this.namedParameters.get(name);
-        return this.unwrapParam(parameter);
-    }
-
-    /**
      * Binds a raw string add to a positional parameter. Using this method to
      * bind the value prevents it from parsed as string by formatters.
      *
@@ -259,6 +237,38 @@ public class QueryBuilder {
         RawString rawString = new RawString(value);
         this.namedParameters.put(name, rawString);
         return this;
+    }
+    
+    public QueryBuilder unbind(int position) {
+        this.positionalParameters.remove(position);
+        return this;
+    }
+    
+    public QueryBuilder unbind(String name) {
+        this.namedParameters.remove(name);
+        return this;
+    }
+
+    /**
+     * Gets the value bound to a positional parameter.
+     *
+     * @param position the parameter's position
+     * @return add bound to the position
+     */
+    public Object boundValue(int position) {
+        Object parameter = this.positionalParameters.get(position);
+        return this.unwrapParam(parameter);
+    }
+
+    /**
+     * Gets the value bound to a named parameter.
+     *
+     * @param name the parameter's name
+     * @return add bound to the name
+     */
+    public Object boundValue(String name) {
+        Object parameter = this.namedParameters.get(name);
+        return this.unwrapParam(parameter);
     }
 
     /**
@@ -334,7 +344,7 @@ public class QueryBuilder {
         } else if (SqlDialect.Oracle.equals(dialect)) {
             formatter = new OracleSqlQueryFormatter();
         } else {
-            throw new IllegalArgumentException("Unknown SQL Dialact " + dialect.name());
+            throw new IllegalArgumentException("Unsupported SQL Dialact " + dialect.name());
         }
 
         formatter.setIncludeParameters(includeParameters);
@@ -365,6 +375,20 @@ public class QueryBuilder {
     public String toPlainString(boolean includeParameters) {
         PlainStringQueryFormatter formatter = new PlainStringQueryFormatter(includeParameters);
         return formatter.format(this);
+    }
+
+    @Override
+    public QueryBuilder clone() {
+        try {
+            QueryBuilder clone = (QueryBuilder) super.clone();
+            clone.components.addAll(components);
+            clone.namedParameters.putAll(namedParameters);
+            clone.positionalParameters.putAll(positionalParameters);
+            return clone;
+        } catch (CloneNotSupportedException ex) {
+            // this should not happen
+            throw new InternalError();
+        }
     }
 
     public static void main(String[] args) {
